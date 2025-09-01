@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Math AI Helper</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        text-align: center;
+        width: 400px;
+      }
+
+      h1 {
+        color: #2c3e50;
+      }
+
+      select,
+      input,
+      button {
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        width: 100%;
+      }
+
+      button {
+        background: #3498db;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #2980b9;
+      }
+
+      .feedback {
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      .explanation {
+        margin-top: 10px;
+        padding: 10px;
+        background: #ecf0f1;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Math AI Helper 🧮</h1>
+
+      <label for="operation">Choose type:</label>
+      <select id="operation">
+        <option value="add">Addition</option>
+        <option value="sub">Subtraction</option>
+        <option value="mul">Multiplication</option>
+        <option value="div">Division</option>
+        <option value="word">Word Problem</option>
+      </select>
+
+      <button onclick="generateQuestion()">Get Question</button>
+
+      <p id="question"></p>
+
+      <button onclick="readQuestion()">🔊 Read Question</button>
+
+      <input type="number" id="answer" placeholder="Your answer" />
+      <button onclick="checkAnswer()">Check Answer</button>
+
+      <p class="feedback" id="feedback"></p>
+      <div class="explanation" id="explanation"></div>
+    </div>
+
+    <script>
+      let currentQuestion = {};
+
+      function speak(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = "en-US";
+        msg.rate = 0.9; // slower for kids
+        window.speechSynthesis.speak(msg);
+      }
+
+      function generateQuestion() {
+        const op = document.getElementById("operation").value;
+        let a = Math.floor(Math.random() * 20) + 1;
+        let b = Math.floor(Math.random() * 10) + 1;
+
+        if (op === "sub" && b > a) [a, b] = [b, a];
+        if (op === "div") a = b * (Math.floor(Math.random() * 5) + 1);
+
+        let questionText = "";
+
+        if (op === "word") {
+          const types = ["add", "sub", "mul", "div"];
+          const type = types[Math.floor(Math.random() * types.length)];
+          currentQuestion.op = type;
+
+          if (type === "add") {
+            questionText = `Sarah has ${a} apples. She buys ${b} more. How many apples does she have now?`;
+            currentQuestion.correct = a + b;
+            currentQuestion.expl = `${a} + ${b} = ${a + b}`;
+          } else if (type === "sub") {
+            if (b > a) [a, b] = [b, a];
+            questionText = `James had ${a} candies. He ate ${b}. How many candies are left?`;
+            currentQuestion.correct = a - b;
+            currentQuestion.expl = `${a} - ${b} = ${a - b}`;
+          } else if (type === "mul") {
+            questionText = `There are ${a} baskets with ${b} oranges each. How many oranges in total?`;
+            currentQuestion.correct = a * b;
+            currentQuestion.expl = `${a} × ${b} = ${a * b}`;
+          } else if (type === "div") {
+            a = b * (Math.floor(Math.random() * 5) + 1);
+            questionText = `A teacher has ${a} pencils to share among ${b} students. How many pencils per student?`;
+            currentQuestion.correct = a / b;
+            currentQuestion.expl = `${a} ÷ ${b} = ${a / b}`;
+          }
+        } else {
+          currentQuestion = { a, b, op };
+          questionText =
+            op === "add"
+              ? `${a} + ${b} = ?`
+              : op === "sub"
+              ? `${a} - ${b} = ?`
+              : op === "mul"
+              ? `${a} × ${b} = ?`
+              : `${a} ÷ ${b} = ?`;
+        }
+
+        document.getElementById("question").innerText = questionText;
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("explanation").innerText = "";
+        document.getElementById("answer").value = "";
+
+        speak(questionText); // auto-read when generated
+      }
+
+      function readQuestion() {
+        const text = document.getElementById("question").innerText;
+        if (text) speak(text);
+      }
+
+      function checkAnswer() {
+        const userAns = parseInt(document.getElementById("answer").value);
+        let correct, explanation;
+
+        if (document.getElementById("operation").value === "word") {
+          correct = currentQuestion.correct;
+          explanation = currentQuestion.expl;
+        } else {
+          const { a, b, op } = currentQuestion;
+          switch (op) {
+            case "add":
+              correct = a + b;
+              explanation = `${a} + ${b} = ${correct}`;
+              break;
+            case "sub":
+              correct = a - b;
+              explanation = `${a} - ${b} = ${correct}`;
+              break;
+            case "mul":
+              correct = a * b;
+              explanation = `${a} × ${b} = ${correct}`;
+              break;
+            case "div":
+              correct = a / b;
+              explanation = `${a} ÷ ${b} = ${correct}`;
+              break;
+          }
+        }
+
+        if (userAns === correct) {
+          document.getElementById("feedback").innerText =
+            "✅ Correct! Well done!";
+          document.getElementById("feedback").style.color = "green";
+          speak("Correct! Well done!");
+        } else {
+          document.getElementById(
+            "feedback"
+          ).innerText = `❌ Oops! The correct answer is ${correct}`;
+          document.getElementById("feedback").style.color = "red";
+          speak(`Oops! The correct answer is ${correct}`);
+        }
+
+        document.getElementById("explanation").innerText = explanation;
+      }
+    </script>
+  </body>
+</html>
